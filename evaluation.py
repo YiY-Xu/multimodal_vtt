@@ -5,7 +5,6 @@ import pickle
 import numpy
 import time
 import numpy as np
-from vocab import Vocabulary  # NOQA
 import torch
 from data_resnet import get_test_loader as get_test_loader1
 from data_i3d_audio import get_test_loader as get_test_loader2
@@ -131,10 +130,10 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
 
     if data_path is not None:
         opt.data_path = data_path
-    opt.vocab_path = "./vocab/"
-    # load vocabulary used by the model				   
-    vocab = pickle.load(open(os.path.join(
-        opt.vocab_path, 'vocab.pkl'), 'rb'))
+    # opt.vocab_path = "./vocab/"
+    # # load vocabulary used by the model				   
+    # vocab = pickle.load(open(os.path.join(
+    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
         
     opt.vocab_size = len(vocab)
 
@@ -145,7 +144,7 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
     model.load_state_dict(checkpoint['model'])
 
     print('Loading dataset')
-    data_loader = get_test_loader1(split, opt.data_name, vocab, opt.crop_size,
+    data_loader = get_test_loader1(split, opt.data_name, opt.crop_size,
                                   opt.batch_size, opt.workers, opt)
 
     print('Computing results...')
@@ -158,10 +157,10 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
 
     if data_path is not None:
         opt.data_path = data_path
-    opt.vocab_path = "./vocab/"
-    # load vocabulary used by the model			   
-    vocab = pickle.load(open(os.path.join(
-        opt.vocab_path, 'vocab.pkl'), 'rb'))
+    # opt.vocab_path = "./vocab/"
+    # # load vocabulary used by the model			   
+    # vocab = pickle.load(open(os.path.join(
+    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
         
     opt.vocab_size = len(vocab)
 

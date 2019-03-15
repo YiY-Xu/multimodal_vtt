@@ -7,23 +7,23 @@ import shutil
 import torch
 
 #import data_i3d_audio as data
-import data_resnet as data
-from vocab import Vocabulary  # NOQA
-from model_resnet_mean import VSE
+#import data_resnet as data
+import how2dataset as data
+from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
 
 import logging
 import tensorboard_logger as tb_logger
 
 import argparse
-
+#20906
 
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', default='/hdd2/niluthpol/VTT/',
+    parser.add_argument('--data_path', default='/home/ubuntu/las',
                         help='path to datasets')
-    parser.add_argument('--data_name', default='precomp',
+    parser.add_argument('--data_name', default='how2-300h-v1',
                         help='msr-vtt|msvd')
     parser.add_argument('--vocab_path', default='./vocab/',
                         help='Path to saved vocabulary pickle files.')
@@ -74,15 +74,15 @@ def main():
     tb_logger.configure(opt.logger_name, flush_secs=5)
 
     # Load Vocabulary Wrapper
-    vocab = pickle.load(open(os.path.join(
-        opt.vocab_path, 'vocab.pkl'), 'rb'))
+    # vocab = pickle.load(open(os.path.join(
+    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
 	#vocab = pickle.load(open(os.path.join(
     #    opt.vocab_path, '%s_vocab.pkl' % opt.data_name), 'rb'))
-    opt.vocab_size = len(vocab)
-    opt.data_name = 'msr-vtt'
+    opt.finetune=False
+    opt.vocab_size = 20906
     # Load data loaders
-    train_loader, val_loader = data.get_loaders(
-        opt.data_name, vocab, opt.crop_size, opt.batch_size, opt.workers, opt)
+    train_loader, val_loader, _ = data.get_loaders(
+        opt.data_name, opt.crop_size, opt.batch_size, opt.workers, opt)
 
     # Construct the model
     model = VSE(opt)
