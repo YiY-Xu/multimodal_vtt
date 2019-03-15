@@ -18,10 +18,10 @@ class How2(Dataset):
 
         self.ids = ids
         # load video features
-        self.img = np.load(video_feat_path + '/' + data_type + '.npy')
+        self.img = torch.from_numpy(np.load(video_feat_path + '/' + data_type + '.npy'))
 
         # load text features
-        self.cap = np.load(text_feat_path + '/' + data_type + '.npy')
+        self.cap = torch.from_numpy(np.load(text_feat_path + '/' + data_type + '.npy'))
 
         self.data_type = data_type
 
