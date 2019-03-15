@@ -18,10 +18,10 @@ class How2(Dataset):
 
         self.ids = ids
         # load video features
-        self.img = np.load(video_feat_path + '/' + data_type + '.npy')
+        self.img = torch.from_numpy(np.load(video_feat_path + '/' + data_type + '.npy'))
 
         # load text features
-        self.cap = np.load(text_feat_path + '/' + data_type + '.npy')
+        self.cap = torch.from_numpy(np.load(text_feat_path + '/' + data_type + '.npy'))
 
         self.data_type = data_type
 
@@ -57,17 +57,17 @@ class How2(Dataset):
         # print(len(self.img), len(self.cap), len(self.aud))
 
     def __getitem__(self, index):
-        print (self.img[index].shape, self.aud[index].shape)
+        #print (self.img[index].shape, self.aud[index].shape)
         return self.img[index], self.cap[index]#, self.aud[index]
 
     def __len__(self):
         return len(self.img)
 
-    def dump_file(self):
-        print('done')
-        np.save('../how2-300h-v1/features/audio/' + self.data_type + '.npy', self.aud)
+    # def dump_file(self):
+    #     print('done')
+    #     np.save('../how2-300h-v1/features/audio/' + self.data_type + '.npy', self.aud)
 
-def collate_fn(self, data):
+def collate_fn(data):
     data.sort(key=lambda x: len(x[1]), reverse=True)
     # images, captions, audios = zip(*data)
     images, captions = zip(*data)
@@ -85,7 +85,7 @@ def collate_fn(self, data):
 
 def get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, ids, data_type, opt, batch_size=10, shuffle=True, num_workers=2):
     how2 = How2(video_feat_path, audio_feat_path, text_feat_path, ids, data_type)
-    how2.dump_file()
+    #how2.dump_file()
     data_loader = torch.utils.data.DataLoader(dataset=how2,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
