@@ -251,7 +251,7 @@ def i2t(videos, captions, videos2, captions2, shared_space='both', measure='cosi
 
 
 
-def t2i(videos, captions, videos2, captions2, shared_space='both', measure='cosine', return_ranks=False):
+def t2i(videos, captions, videos2, captions2, shared_space='object_text', measure='cosine', return_ranks=False):
     """
     Text->Videos (Video Search)
     Videos: (20N, K) matrix of videos
