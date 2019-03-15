@@ -94,7 +94,7 @@ class EncoderText(nn.Module):
         """
         # Embed word ids to vectors
         x = self.embed(x)
-    #print(lengths)
+	#print(lengths)
         packed = pack_padded_sequence(x, lengths, batch_first=True)
 
         # Forward propagate RNN
@@ -147,49 +147,48 @@ class Loss(nn.Module):
         scores = self.sim(im, s)
         diagonal = scores.diag().view(im.size(0), 1)
         d1 = diagonal.expand_as(scores)
-        d2 = diagonal.t().expand_as(scores) 
-        
+        d2 = diagonal.t().expand_as(scores)
+
         d1_sort, d1_indice=torch.sort(scores)
         val, id1 = torch.min(d1_indice,1)
         rank_weights1 = id1.float()
-        
+
         for j in range(d1.size(0)):
-                rank_weights1[j]=1/(rank_weights1[j]+1)
-        
-        d2_sort, d2_indice=torch.sort(scores.t())
-        val, id2 = torch.min(d2_indice,1)
-        rank_weights2 = id2.float()
-        
-        for k in range(d2.size(0)):
-            rank_weights2[j]=1/(rank_weights2[j]+1) 
-            
-        # compare every diagonal score to scores in its column
-        # caption retrieval
-        cost_s = (self.margin + scores - d1).clamp(min=0)
-        # compare every diagonal score to scores in its row
-        # image retrieval
-        cost_im = (self.margin + scores - d2).clamp(min=0)
+            rank_weights1[j]=1/(rank_weights1[j]+1)
+            d2_sort, d2_indice=torch.sort(scores.t())
+            val, id2 = torch.min(d2_indice,1)
+            rank_weights2 = id2.float()
 
-        # clear diagonals
-        mask = torch.eye(scores.size(0)) > .5
-        I = Variable(mask)
-        if torch.cuda.is_available():
-            I = I.cuda()
-        cost_s = cost_s.masked_fill_(I, 0)
-        cost_im = cost_im.masked_fill_(I, 0)
- 
-        # keep the maximum violating negative for each query
-        cost_s = cost_s.max(1)[0]
-        cost_im = cost_im.max(0)[0]
-        
-        # weight similarity scores
-        cost_s= torch.mul(rank_weights1, cost_s)
-        cost_im= torch.mul(rank_weights2, cost_im)
+            for k in range(d2.size(0)):
+                rank_weights2[j]=1/(rank_weights2[j]+1)
 
-        return cost_s.sum() + cost_im.sum()
+            # compare every diagonal score to scores in its column
+            # caption retrieval
+            cost_s = (self.margin + scores - d1).clamp(min=0)
+            # compare every diagonal score to scores in its row
+            # image retrieval
+            cost_im = (self.margin + scores - d2).clamp(min=0)
+
+            # clear diagonals
+            mask = torch.eye(scores.size(0)) > .5
+            I = Variable(mask)
+            if torch.cuda.is_available():
+                I = I.cuda()
+            cost_s = cost_s.masked_fill_(I, 0)
+            cost_im = cost_im.masked_fill_(I, 0)
+
+            # keep the maximum violating negative for each query
+            cost_s = cost_s.max(1)[0]
+            cost_im = cost_im.max(0)[0]
+
+    		# weight similarity scores
+            cost_s= torch.mul(rank_weights1, cost_s)
+            cost_im= torch.mul(rank_weights2, cost_im)
+
+            return (cost_s.sum() + cost_im.sum())
 
 
-        
+
 class VSE(object):
     """
     rkiros/uvs model
@@ -216,8 +215,8 @@ class VSE(object):
                                          max_violation=opt.max_violation)
         params = list(self.txt_enc.parameters())
         params += list(self.img_enc.fc.parameters())
-        if opt.finetune:
-            params += list(self.img_enc.cnn.parameters())
+        # if opt.finetune:
+        #     params += list(self.img_enc.cnn.parameters())
         self.params = params
 
         self.optimizer = torch.optim.Adam(params, lr=opt.learning_rate)
@@ -258,7 +257,7 @@ class VSE(object):
         img_emb = self.img_enc(images)
         cap_emb = self.txt_enc(captions, lengths)
         return img_emb, cap_emb
-        
+
     def forward_emb_image(self, images, volatile=False):
         """Compute the image and caption embeddings
         """
@@ -267,6 +266,7 @@ class VSE(object):
 
         if torch.cuda.is_available():
             images = images.cuda()
+            #captions = captions.cuda()
 
         # Forward
         img_emb = self.img_enc(images)
@@ -282,14 +282,15 @@ class VSE(object):
         # Forward
         cap_emb = self.txt_enc(captions, lengths)
         return cap_emb
-        
+
     def forward_loss(self, img_emb, cap_emb, **kwargs):
         """Compute the loss given pairs of image and caption embeddings
         """
         #print(img_emb)
         #print(cap_emb)
         loss = self.criterion(img_emb, cap_emb)
-        self.logger.update('Le', loss.data[0], img_emb.size(0))
+        # print (loss.data, img_emb.size(0))
+        self.logger.update('Le', loss.data.item(), img_emb.size(0))
         return loss
 
     def train_emb(self, images, captions, lengths, ids=None, *args):

@@ -7,8 +7,8 @@ import shutil
 import torch
 
 #import data_i3d_audio as data
-#import data_resnet as data
-import how2dataset as data
+import data_resnet as data
+from vocab import Vocabulary  # NOQA
 from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
 
@@ -16,14 +16,14 @@ import logging
 import tensorboard_logger as tb_logger
 
 import argparse
-#20906
+
 
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', default='/home/ubuntu/las',
+    parser.add_argument('--data_path', default='/hdd2/niluthpol/VTT/',
                         help='path to datasets')
-    parser.add_argument('--data_name', default='how2-300h-v1',
+    parser.add_argument('--data_name', default='precomp',
                         help='msr-vtt|msvd')
     parser.add_argument('--vocab_path', default='./vocab/',
                         help='Path to saved vocabulary pickle files.')
@@ -74,15 +74,15 @@ def main():
     tb_logger.configure(opt.logger_name, flush_secs=5)
 
     # Load Vocabulary Wrapper
-    # vocab = pickle.load(open(os.path.join(
-    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
+    vocab = pickle.load(open(os.path.join(
+        opt.vocab_path, 'vocab.pkl'), 'rb'))
 	#vocab = pickle.load(open(os.path.join(
     #    opt.vocab_path, '%s_vocab.pkl' % opt.data_name), 'rb'))
-    opt.finetune=False
-    opt.vocab_size = 20906
+    opt.vocab_size = len(vocab)
+    opt.data_name = 'msr-vtt'
     # Load data loaders
-    train_loader, val_loader, _ = data.get_loaders(
-        opt.data_name, opt.crop_size, opt.batch_size, opt.workers, opt)
+    train_loader, val_loader = data.get_loaders(
+        opt.data_name, vocab, opt.crop_size, opt.batch_size, opt.workers, opt)
 
     # Construct the model
     model = VSE(opt)
@@ -172,6 +172,9 @@ def train(opt, train_loader, model, epoch, val_loader):
         # validate at every val_step
         if model.Eiters % opt.val_step == 0:
             validate(opt, val_loader, model)
+        # QYL : added this line
+            model.train_start()
+
 
 
 def validate(opt, val_loader, model):
@@ -180,12 +183,15 @@ def validate(opt, val_loader, model):
         model, val_loader, opt.log_step, logging.info)
 
     # caption retrieval
-    (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
+    # QYL: I duplicate input here
+    (r1, r5, r10, medr, meanr) = i2t(
+        img_embs, cap_embs, img_embs, cap_embs, measure=opt.measure)
     logging.info("Image to text: %.1f, %.1f, %.1f, %.1f, %.1f" %
                  (r1, r5, r10, medr, meanr))
     # image retrieval
     (r1i, r5i, r10i, medri, meanr) = t2i(
-        img_embs, cap_embs, measure=opt.measure)
+        img_embs, cap_embs, img_embs, cap_embs, measure=opt.measure)
+    # QYL: I duplicate input here
     logging.info("Text to image: %.1f, %.1f, %.1f, %.1f, %.1f" %
                  (r1i, r5i, r10i, medri, meanr))
     # sum of recalls to be used for early stopping

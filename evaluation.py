@@ -5,6 +5,7 @@ import pickle
 import numpy
 import time
 import numpy as np
+from vocab import Vocabulary  # NOQA
 import torch
 from data_resnet import get_test_loader as get_test_loader1
 from data_i3d_audio import get_test_loader as get_test_loader2
@@ -56,7 +57,7 @@ class LogCollector(object):
         """Concatenate the meters in one log line
         """
         s = ''
-        for i, (k, v) in enumerate(self.meters.iteritems()):
+        for i, (k, v) in enumerate(self.meters.items()):
             if i > 0:
                 s += '  '
             s += k + ' ' + str(v)
@@ -65,7 +66,7 @@ class LogCollector(object):
     def tb_log(self, tb_logger, prefix='', step=None):
         """Log using tensorboard
         """
-        for k, v in self.meters.iteritems():
+        for k, v in self.meters.items():
             tb_logger.log_value(prefix + k, v.val, step=step)
 
 
@@ -90,7 +91,7 @@ def encode_data(model, data_loader, log_step=10, logging=print):
         # compute the embeddings
         img_emb, cap_emb = model.forward_emb(videos, captions, lengths,
                                              volatile=True)
-											 
+
         # initialize the numpy arrays given the size of the embeddings
         if img_embs is None:
             img_embs = np.zeros((len(data_loader.dataset), img_emb.size(1)))
@@ -130,11 +131,11 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
 
     if data_path is not None:
         opt.data_path = data_path
-    # opt.vocab_path = "./vocab/"
-    # # load vocabulary used by the model				   
-    # vocab = pickle.load(open(os.path.join(
-    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
-        
+    opt.vocab_path = "./vocab/"
+    # load vocabulary used by the model
+    vocab = pickle.load(open(os.path.join(
+        opt.vocab_path, 'vocab.pkl'), 'rb'))
+
     opt.vocab_size = len(vocab)
 
     # construct model
@@ -144,12 +145,12 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
     model.load_state_dict(checkpoint['model'])
 
     print('Loading dataset')
-    data_loader = get_test_loader1(split, opt.data_name, opt.crop_size,
+    data_loader = get_test_loader1(split, opt.data_name, vocab, opt.crop_size,
                                   opt.batch_size, opt.workers, opt)
 
     print('Computing results...')
     img_embs1, cap_embs1 = encode_data(model, data_loader)
-	
+
     # load second model and options
     checkpoint2 = torch.load(model_path2)
     opt = checkpoint2['opt']
@@ -157,11 +158,11 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
 
     if data_path is not None:
         opt.data_path = data_path
-    # opt.vocab_path = "./vocab/"
-    # # load vocabulary used by the model			   
-    # vocab = pickle.load(open(os.path.join(
-    #     opt.vocab_path, 'vocab.pkl'), 'rb'))
-        
+    opt.vocab_path = "./vocab/"
+    # load vocabulary used by the model
+    vocab = pickle.load(open(os.path.join(
+        opt.vocab_path, 'vocab.pkl'), 'rb'))
+
     opt.vocab_size = len(vocab)
 
     # construct model
@@ -175,8 +176,8 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
                                   opt.batch_size, opt.workers, opt)
 
     print('Computing results...')
-    img_embs2, cap_embs2 = encode_data(model2, data_loader)	
-	
+    img_embs2, cap_embs2 = encode_data(model2, data_loader)
+
     print('Images: %d, Captions: %d' %
           (img_embs2.shape[0] / 20, cap_embs2.shape[0]))
 
@@ -202,11 +203,13 @@ def i2t(videos, captions, videos2, captions2, shared_space='both', measure='cosi
     Captions: (20N, K) matrix of captions
     """
 
-    
+
     npts = videos.shape[0] / 20
     index_list = []
     print(npts)
-	
+    # QYL added:
+    npts = int(npts)
+
     ranks = numpy.zeros(npts)
     top1 = numpy.zeros(npts)
     for index in range(npts):
@@ -221,8 +224,8 @@ def i2t(videos, captions, videos2, captions2, shared_space='both', measure='cosi
         elif 'object_text' == shared_space:
             d = numpy.dot(im, captions.T).flatten()
         elif 'activity_text' == shared_space:
-            d = numpy.dot(im2, captions2.T).flatten()		
-			
+            d = numpy.dot(im2, captions2.T).flatten()
+
         inds = numpy.argsort(d)[::-1]
         index_list.append(inds[0])
         # Score
@@ -247,18 +250,20 @@ def i2t(videos, captions, videos2, captions2, shared_space='both', measure='cosi
         return (r1, r5, r10, medr, meanr)
 
 
-		
+
 def t2i(videos, captions, videos2, captions2, shared_space='both', measure='cosine', return_ranks=False):
     """
     Text->Videos (Video Search)
     Videos: (20N, K) matrix of videos
     Captions: (20N, K) matrix of captions
     """
-    
+
     npts = videos.shape[0] / 20
     ims = numpy.array([videos[i] for i in range(0, len(videos), 20)])
     ims2 = numpy.array([videos2[i] for i in range(0, len(videos2), 20)])
-	
+    # QYL added:
+    npts = int(npts)
+
     ranks = numpy.zeros(20 * npts)
     top1 = numpy.zeros(20 * npts)
     for index in range(npts):
@@ -268,13 +273,13 @@ def t2i(videos, captions, videos2, captions2, shared_space='both', measure='cosi
 
         if 'both' == shared_space:
             d1 = numpy.dot(queries, ims.T)
-            d2 = numpy.dot(queries2, ims2.T)		
+            d2 = numpy.dot(queries2, ims2.T)
             d = d1+d2
         elif 'object_text' == shared_space:
             d = numpy.dot(queries, ims.T)
         elif 'activity_text' == shared_space:
-            d = numpy.dot(queries2, ims2.T)			
-		
+            d = numpy.dot(queries2, ims2.T)
+
         inds = numpy.zeros(d.shape)
         for i in range(len(inds)):
             inds[i] = numpy.argsort(d[i])[::-1]
