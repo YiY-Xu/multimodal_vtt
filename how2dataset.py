@@ -7,72 +7,61 @@ import nltk
 from PIL import Image
 import numpy as np
 import json as jsonmod
-import kaldi_io
 import pickle
 from tqdm import tqdm
-import kaldi_source
+from kaldiio import ReadHelper
+
 
 class How2(Dataset):
 
-    def __init__(self, video_feat_path, audio_feat_path, text_feat_path, ids, data_type):
-
+    def __init__(self, video_feat_path, audio_feat_path, text_feat_path, ids, data_type, use_aud):
+        self.use_aud = use_aud
         self.ids = ids
         # load video features
         self.img = torch.from_numpy(np.load(video_feat_path + '/' + data_type + '.npy'))
 
         # load text features
-        self.cap = torch.from_numpy(np.load(text_feat_path + '/' + data_type + '.npy'))
+        self.cap = [torch.from_numpy(x) for x in np.load(text_feat_path + '/' + data_type + '.npy')]
 
         self.data_type = data_type
 
         # load audio features
-        #self.aud = np.load(audio_feat_path + '/' + data_type + '.npy')
+        self.aud = torch.from_numpy(np.load(audio_feat_path + '/' + data_type + '.npy'))
+
         # audio = []
         # for i in tqdm(range(10)):
-        #     file = audio_feat_path + '/raw_fbank_pitch_all_181506.' + str(i+1) + '.scp'
+        #     file = 'scp:'+ audio_feat_path + '/raw_fbank_pitch_all_181506.' + str(i+1) + '.scp'
         #     print(file)
-        #     last_key = ""
-        #     unit = np.zeros((1, 43))
-        #     first = True
-        #     try:
-        #         for key, mat in kaldi_source.read_mat_scp(file):
-        #             key = key[:11]
-        #             if key == last_key:
-        #                 unit = np.concatenate((unit, mat), axis=0)
-        #             if key != last_key:
-        #                 last_key = key
-        #                 if not first:
-        #                     if key in self.ids:
-        #                         audio.append(unit)
-        #                     unit = np.zeros((1, 43))
-        #                 else:
-        #                     first = False
-        #                 unit = np.concatenate((unit, mat), axis=0)
-        #     except Exception as e:
-        #         print(e)
-        #         continue
-        #     if last_key in self.ids:
-        #         audio.append(unit)
-        # self.aud = audio
+        #     with ReadHelper(file) as reader:
+        #         for key, array in reader:
+        #             if key in self.ids:
+        #                 audio.append(np.mean(array, axis=0))
+        #     print(len(audio))
+        # self.aud = np.array(audio)
         # print(len(self.img), len(self.cap), len(self.aud))
 
     def __getitem__(self, index):
-        #print (self.img[index].shape, self.aud[index].shape)
-        return self.img[index], self.cap[index]#, self.aud[index]
+        if self.use_aud:
+            img_aud = torch.cat([self.img[index], self.aud[index]])
+        else:
+            img_aud = self.img[index]
+        return img_aud, self.cap[index], index
 
     def __len__(self):
         return len(self.img)
 
-    # def dump_file(self):
-    #     print('done')
-    #     np.save('../how2-300h-v1/features/audio/' + self.data_type + '.npy', self.aud)
+    def dump_file(self):
+        # with open('../how2-300h-v1/features/audio/' + self.data_type + '.npy', 'wb') as f:
+        #     pickle.dump(self.aud, f)
+        np.save('../how2-300h-v1/features/audio/' + self.data_type + '.npy', self.aud)
 
 def collate_fn(data):
     data.sort(key=lambda x: len(x[1]), reverse=True)
-    # images, captions, audios = zip(*data)
-    images, captions = zip(*data)
+    img_aud, captions, ids = zip(*data)
 
-    #img_aud = np.hstake(images, audios)
+    img_aud = torch.stack(img_aud, 0)
+
+    #images, captions = zip(*data)
 
     # Merge captions (convert tuple of 1D tensor to 2D tensor)
     lengths = [len(cap) for cap in captions]
@@ -81,11 +70,10 @@ def collate_fn(data):
         end = lengths[i]
         targets[i, :end] = cap[:end]
 
-    return images, targets, lengths
+    return img_aud, targets, lengths, ids
 
 def get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, ids, data_type, opt, batch_size=10, shuffle=True, num_workers=2):
-    how2 = How2(video_feat_path, audio_feat_path, text_feat_path, ids, data_type)
-    #how2.dump_file()
+    how2 = How2(video_feat_path, audio_feat_path, text_feat_path, ids, data_type, opt.use_aud)
     data_loader = torch.utils.data.DataLoader(dataset=how2,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
@@ -99,6 +87,8 @@ def get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, ids, data_
 
 def get_loaders(data_name, crop_size, batch_size, workers, opt):
     dpath = os.path.join(opt.data_path, data_name)
+    if opt.use_aud:
+        opt.img_dim = 2091
     if opt.data_name.startswith('how2'):
 
         train_ids = []
@@ -118,7 +108,7 @@ def get_loaders(data_name, crop_size, batch_size, workers, opt):
 
         text_feat_path = dpath + '/features/scripts'
         video_feat_path = dpath + '/features/resnext101-action-avgpool-300h'
-        audio_feat_path = dpath + '/features/fbank_pitch_181506'
+        audio_feat_path = dpath + '/features/audio'
 
         train_loader = get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, train_ids, 'train', opt, batch_size, True, workers)
         val_loader = get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, val_ids, 'val', opt, batch_size, False, workers)
@@ -179,7 +169,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print("this is for test dataset")
     video_feat_path = '../how2-300h-v1/features/resnext101-action-avgpool-300h'
-    audio_feat_path = '../how2-300h-v1/features/fbank_pitch_181506'
+    audio_feat_path = '../how2-300h-v1/features/audio'
     text_feat_path = '../how2-300h-v1/features/scripts'
 
     train_loader, val_loader, test_loader = get_loaders('how2-300h-v1', 224, 100, 1, opt)
