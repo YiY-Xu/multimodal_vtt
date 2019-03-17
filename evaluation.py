@@ -5,7 +5,7 @@ import pickle
 import numpy
 import time
 import numpy as np
-from vocab import Vocabulary  # NOQA
+#from vocab import Vocabulary  # NOQA
 import torch
 from data_resnet import get_test_loader as get_test_loader1
 from data_i3d_audio import get_test_loader as get_test_loader2
@@ -120,7 +120,7 @@ def encode_data(model, data_loader, log_step=10, logging=print):
     return img_embs, cap_embs
 
 
-def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False, shared_space='both'):
+def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False, shared_space='object_text'):
     """
     Evaluate a trained model.
     """
@@ -140,6 +140,9 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
 
     # construct model
     model = VSE(opt)
+
+    model.img_enc.eval()
+    model.txt_enc.eval()
 
     # load model state
     model.load_state_dict(checkpoint['model'])
@@ -182,8 +185,8 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
           (img_embs2.shape[0] / 20, cap_embs2.shape[0]))
 
     # no cross-validation, full evaluation
-    r, rt = i2t(img_embs1, cap_embs1, img_embs2, cap_embs2, shared_space, measure=opt.measure, return_ranks=True)
-    ri, rti = t2i(img_embs1, cap_embs1, img_embs2, cap_embs2, shared_space, measure=opt.measure, return_ranks=True)
+    r, rt = i2t(img_embs1, cap_embs1, img_embs1, cap_embs1, shared_space, measure=opt.measure, return_ranks=True)
+    ri, rti = t2i(img_embs1, cap_embs1, img_embs1, cap_embs1, shared_space, measure=opt.measure, return_ranks=True)
     ar = (r[0] + r[1] + r[2]) / 3
     ari = (ri[0] + ri[1] + ri[2]) / 3
     rsum = r[0] + r[1] + r[2] + ri[0] + ri[1] + ri[2]
@@ -196,7 +199,7 @@ def evalrank(model_path1, model_path2, data_path=None, split='dev', fold5=False,
     torch.save({'rt': rt, 'rti': rti}, 'ranks.pth.tar')
 
 
-def i2t(videos, captions, videos2, captions2, shared_space='both', measure='cosine', return_ranks=False):
+def i2t(videos, captions, videos2, captions2, shared_space='object_text', measure='cosine', return_ranks=False):
     """
     Videos->Text (Video Annotation)
     Videos: (20N, K) matrix of videos

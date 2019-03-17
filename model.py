@@ -5,7 +5,7 @@ import torchvision.models as models
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch.backends.cudnn as cudnn
-from torch.nn.utils.clip_grad import clip_grad_norm
+from torch.nn.utils.clip_grad import clip_grad_norm_
 import numpy as np
 from collections import OrderedDict
 
@@ -247,8 +247,9 @@ class VSE(object):
         """Compute the image and caption embeddings
         """
         # Set mini-batch dataset
-        images = Variable(images, volatile=volatile)
-        captions = Variable(captions, volatile=volatile)
+        images = Variable(images)
+        captions = Variable(captions)
+
         if torch.cuda.is_available():
             images = images.cuda()
             captions = captions.cuda()
@@ -262,7 +263,7 @@ class VSE(object):
         """Compute the image and caption embeddings
         """
         # Set mini-batch dataset
-        images = Variable(images, volatile=volatile)
+        images = Variable(images)
 
         if torch.cuda.is_available():
             images = images.cuda()
@@ -275,7 +276,7 @@ class VSE(object):
     def forward_emb_caption(self, captions, lengths, volatile=False):
         #"""Compute the image and caption embeddings"""
         # Set mini-batch dataset
-        captions = Variable(captions, volatile=volatile)
+        captions = Variable(captions)
         if torch.cuda.is_available():
             captions = captions.cuda()
 
@@ -311,5 +312,5 @@ class VSE(object):
         # compute gradient and do SGD step
         loss.backward()
         if self.grad_clip > 0:
-            clip_grad_norm(self.params, self.grad_clip)
+            clip_grad_norm_(self.params, self.grad_clip)
         self.optimizer.step()

@@ -1,4 +1,4 @@
-from vocab import Vocabulary
+#from vocab import Vocabulary
 import evaluation
 import numpy
 
