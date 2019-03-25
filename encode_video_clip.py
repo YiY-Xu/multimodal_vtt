@@ -39,7 +39,7 @@ def encode_video_clip(img_id):
     print (img_embs[0], img_embs[0].shape)
     print ('done!')
 
-    index = faiss.IndexFlatL2(text_embedding.shape(1))
+    index = faiss.IndexFlatL2(text_embedding.shape[1])
     index.add(text_embedding)
 
     k = 3
