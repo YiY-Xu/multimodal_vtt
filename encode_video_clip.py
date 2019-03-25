@@ -33,7 +33,7 @@ def encode_video_clip(img_id):
     model.img_enc.cuda()
 
     print ('encoding image...')
-    img_embs = model.img_enc.forward(img_tensor).detach().numpy()
+    img_embs = model.img_enc.forward(img_tensor).cpu().detach().numpy()
 
     print ('outputing...')
     print (img_embs[0], img_embs[0].shape)
