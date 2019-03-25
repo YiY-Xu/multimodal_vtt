@@ -18,9 +18,9 @@ def encode_video_clip(img_id):
     model = VSE(opt)
     vocab = pickle.load(open("../vocab/vocab.pkl", "rb"))
 
-    text_embedding = np.load('../Text_encoded.npy')
+    text_embedding = np.load('../Text_encoded.npy').astype('float32')
 
-    test_imgs = np.load('../how2-300h-v1/features/resnext101-action-avgpool-300h/val.npy')
+    test_imgs = np.load('../how2-300h-v1/features/resnext101-action-avgpool-300h/val.npy').astype('float32')
 
     print ('loading image...')
     #img = np.load('../resnet_feature/video' + img_id + '.npy')
