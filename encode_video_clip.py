@@ -46,12 +46,14 @@ def encode_video_clip(img_id):
     
     D, I = index.search(img_embs[0].reshape(-1, 1024), k)
 
+    print(I)
+
     raw_text = []
     with open('../how2-300h-v1/data/train/text.en') as f:
         for line in f.readlines():
             raw_text.append(line[:-1])
 
-    result = [raw_text[index] for index in I]
+    result = [raw_text[index[0]] for index in I]
     print(result)
     return(result)
 
