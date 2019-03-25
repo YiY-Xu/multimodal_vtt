@@ -51,7 +51,7 @@ def encode_video_clip(img_id):
         for line in f.readlines():
             raw_text.append(line[:-1])
 
-    result = [raw_text[index for index in I[0]]
+    result = [raw_text[index] for index in I[0]]
     print(result)
     return(result)
 
