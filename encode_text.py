@@ -5,8 +5,8 @@ import torch
 import os
 import numpy as np
 
-from vocab import Vocabulary
-from data_resnet import get_loaders
+#from vocab import Vocabulary
+from how2dataset import get_loaders
 
 # Encode all training text to joint embedding space
 
@@ -17,8 +17,8 @@ model = VSE(opt)
 vocab = pickle.load(open("../vocab/vocab.pkl", "rb"))
 
 print ('loading text...')
-train_loader, val_loader = get_loaders(
-        opt.data_name, vocab, opt.crop_size, opt.batch_size, opt.workers, opt)
+train_loader, val_loader, test_loader = get_loaders(
+        opt.data_name, opt.crop_size, opt.batch_size, opt.workers, opt)
 print (val_loader)
 print ('encoding text...')
 _, cap_embs = encode_data(model, train_loader)

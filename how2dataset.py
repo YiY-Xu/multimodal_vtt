@@ -86,6 +86,7 @@ def get_how2_loader(video_feat_path, audio_feat_path, text_feat_path, ids, data_
     
 
 def get_loaders(data_name, crop_size, batch_size, workers, opt):
+
     dpath = os.path.join(opt.data_path, data_name)
     if opt.use_aud:
         opt.img_dim = 2091
