@@ -193,6 +193,17 @@ def validate(opt, val_loader, model):
     (r1i, r5i, r10i, medri, meanr) = t2i(
         img_embs, cap_embs, img_embs, cap_embs, measure=opt.measure)
     # QYL: I duplicate input here
+
+
+    # Yi: add for recall metrics
+    r, rt = i2t(img_embs, cap_embs, img_embs, cap_embs, measure=opt.measure, return_ranks=True)
+    ri, rti = t2i(img_embs1, cap_embs1, img_embs1, cap_embs1, measure=opt.measure, return_ranks=True)
+    ar = (r[0] + r[1] + r[2]) / 3
+    print("Average i2t Recall: %.1f" % ar)
+    print("Image to text: %.1f %.1f %.1f %.1f %.1f" % r)
+    # ends Yi
+
+
     logging.info("Text to image: %.1f, %.1f, %.1f, %.1f, %.1f" %
                  (r1i, r5i, r10i, medri, meanr))
     # sum of recalls to be used for early stopping
@@ -210,6 +221,8 @@ def validate(opt, val_loader, model):
     tb_logger.log_value('medri', medri, step=model.Eiters)
     tb_logger.log_value('meanr', meanr, step=model.Eiters)
     tb_logger.log_value('rsum', currscore, step=model.Eiters)
+
+    tb_logger.log_value('recall', ar, step=model.Eiters)
 
     return currscore
 
