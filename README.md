@@ -1,3 +1,9 @@
+### Handle kaldi audio features
+
+* install kaldiio : pip install kaldiio
+* change data source path directory in preprocessing_audio.py
+* run preprocessing_audio.py
+
 ### Learning Joint Embedding with Multimodal Cues for Cross-Modal Video-Text Retrieval 
 
 Code for the video-text retrieval methods from "Learning Joint Embedding with Multimodal Cues for Cross-Modal Video-Text Retrieval" (Mithun, Niluthpol C and Li, Juncheng and Metze, Florian and Roy-Chowdhury, Amit K) 2018
