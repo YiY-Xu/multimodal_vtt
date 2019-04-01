@@ -9,7 +9,6 @@ import faiss
 #from vocab import Vocabulary
 from data_resnet import get_loaders
 
-
 # Encode all training text to joint embedding space
 def encode_video_clip(img_id):
 
