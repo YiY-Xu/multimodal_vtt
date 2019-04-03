@@ -7,10 +7,10 @@ import time
 import numpy as np
 #from vocab import Vocabulary  # NOQA
 import torch
-from data_resnet import get_test_loader as get_test_loader1
-from data_i3d_audio import get_test_loader as get_test_loader2
+from .data_resnet import get_test_loader as get_test_loader1
+from .data_i3d_audio import get_test_loader as get_test_loader2
 
-from model import VSE
+from .model import VSE
 from collections import OrderedDict
 
 class AverageMeter(object):

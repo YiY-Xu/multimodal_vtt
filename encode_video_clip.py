@@ -1,5 +1,5 @@
-from evaluation import encode_data
-from model import VSE
+from .evaluation import encode_data
+from .model import VSE
 import pickle
 import torch
 import os
@@ -7,7 +7,7 @@ import numpy as np
 import faiss 
 
 #from vocab import Vocabulary
-from data_resnet import get_loaders
+from .data_resnet import get_loaders
 
 # Encode all training text to joint embedding space
 def encode_video_clip(img_id):
